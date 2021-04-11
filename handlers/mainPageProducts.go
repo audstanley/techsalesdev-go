@@ -12,14 +12,14 @@ func MainProductPage(c *fiber.Ctx) error {
 	fmt.Println("mainProductsPage endpoint")
 	var cursor uint64
 	keys, cursor, err := ProductsClient.Scan(RedisCtx, cursor, "*", 1000000).Result()
-	CheckRedisErr(err)
+	CheckRedisErr(c, err)
 
 	var onSale []Product
 	var newArrivals []Product
 	for _, key := range keys {
 		// we need to query redis for the object from the key.
 		v, e := ProductsClient.Get(RedisCtx, key).Result()
-		CheckRedisErr(e)
+		CheckRedisErr(c, e)
 		var p Product
 		json.Unmarshal([]byte(v), &p)
 		if p.OnSale {

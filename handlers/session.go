@@ -67,7 +67,7 @@ func Session(c *fiber.Ctx) error {
 		c.Set("WWW-Authentication", "gtoken")
 		c.Set("Authorization", t)
 		redisErr := GtokenClient.Set(RedisCtx, userString, t, 0).Err()
-		CheckRedisErr(redisErr)
+		CheckRedisErr(c, redisErr)
 		return c.Next()
 		//return c.JSON(fiber.Map{"token": t, "type": "gtoken"})
 	}
@@ -103,7 +103,7 @@ func CreateUser(c *fiber.Ctx) error {
 				um, _ := json.Marshal(u)
 				// Send Data over to Redis
 				err := EmailPending.Set(RedisCtx, username, string(um), 0).Err()
-				CheckRedisErr(err)
+				CheckRedisErr(c, err)
 				if DisableSendingEmail == false {
 					// Send email to newly created user
 					to := []string{username}
@@ -153,7 +153,7 @@ func VerifyUserLogin(c *fiber.Ctx) error {
 				for _, key := range keys {
 					// we need to query redis for the object from the key.
 					v, e := UserClient.Get(RedisCtx, key).Result()
-					CheckRedisErr(e)
+					CheckRedisErr(c, e)
 					var u User
 					json.Unmarshal([]byte(v), &u)
 					if u.Email == username {
@@ -174,7 +174,7 @@ func VerifyUserLogin(c *fiber.Ctx) error {
 							c.Set("WWW-Authentication", "token")
 							c.Set("Authorization", t)
 							redisErr := UserTokensClient.Set(RedisCtx, userString, t, 0).Err()
-							CheckRedisErr(redisErr)
+							CheckRedisErr(c, redisErr)
 						}
 					}
 				}
@@ -191,11 +191,11 @@ func VerifyUserLogin(c *fiber.Ctx) error {
 func Verify(c *fiber.Ctx) error {
 	var cursor uint64
 	keys, cursor, err := EmailPending.Scan(RedisCtx, cursor, "*", 1000000).Result()
-	CheckRedisErr(err)
+	CheckRedisErr(c, err)
 	for _, key := range keys {
 		// we need to query redis for the object from the key.
 		v, e := EmailPending.Get(RedisCtx, key).Result()
-		CheckRedisErr(e)
+		CheckRedisErr(c, e)
 		var u EmailPendingUser
 		json.Unmarshal([]byte(v), &u)
 		if u.Link == c.Params("link", "") {

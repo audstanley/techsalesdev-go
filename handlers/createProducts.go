@@ -65,7 +65,7 @@ func PopulateDatabaseWithImages() {
 		}
 		b, err := json.Marshal(p)
 		err = ProductsClient.Set(RedisCtx, md5Hash, string(b), 0).Err()
-		CheckRedisErr(err)
+		CheckRedisErrWithoutContext(err)
 		file.Close()
 	}
 

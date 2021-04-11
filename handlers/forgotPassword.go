@@ -12,7 +12,19 @@ import (
 	"golang.org/x/crypto/sha3"
 )
 
-func CheckRedisErr(e error) {
+func CheckRedisErr(c *fiber.Ctx, e error) error {
+	if e != nil {
+		fmt.Println("REDIS ERROR", e)
+		fmt.Println("Make sure to set the environment variable: REDIS_PASS")
+		fmt.Println("Make sure the backend REDIS_ENDPOINT is pointed correctly (127.0.0.1:6379?)")
+		c.Status(500)
+		return c.JSON(map[string]string{"Status": "Internal Error"})
+		//panic(e)
+	}
+	return nil
+}
+
+func CheckRedisErrWithoutContext(e error) {
 	if e != nil {
 		fmt.Println("REDIS ERROR", e)
 		fmt.Println("Make sure to set the environment variable: REDIS_PASS")
@@ -36,14 +48,14 @@ func ForgotPassword(c *fiber.Ctx) error {
 
 	// make sure the user exists
 	iEmailExists, err := UserClient.Exists(RedisCtx, email.Email).Result()
-	CheckRedisErr(err)
+	CheckRedisErr(c, err)
 	if iEmailExists == 0 {
 		return c.JSON(map[string]string{"status": "There is no account for " + email.Email})
 	}
 
 	forgotPasswordEmailStructAsString, err := json.Marshal(email)
 	err = ForgotPasswordsClient.Set(RedisCtx, email.Email, forgotPasswordEmailStructAsString, 0).Err()
-	CheckRedisErr(err)
+	CheckRedisErr(c, err)
 
 	if DisableSendingEmail == false {
 		// Send email to newly created user
@@ -78,11 +90,11 @@ func ForgotPasswordLinkGet(c *fiber.Ctx) error {
 	if link != "" {
 		var cursor uint64
 		keys, cursor, err := ForgotPasswordsClient.Scan(RedisCtx, cursor, "*", 1000000).Result()
-		CheckRedisErr(err)
+		CheckRedisErr(c, err)
 		// not efficient, but good for now
 		for _, key := range keys {
 			v, e := ForgotPasswordsClient.Get(RedisCtx, key).Result()
-			CheckRedisErr(e)
+			CheckRedisErr(c, e)
 			var f ForgotPasswordEmailStruct
 			json.Unmarshal([]byte(v), &f)
 			if f.Link == link {
@@ -103,11 +115,11 @@ func ForgotPasswordLinkPost(c *fiber.Ctx) error {
 	if link != "" {
 		var cursor uint64
 		keys, cursor, err := ForgotPasswordsClient.Scan(RedisCtx, cursor, "*", 1000000).Result()
-		CheckRedisErr(err)
+		CheckRedisErr(c, err)
 		// not efficient, but good for now
 		for _, key := range keys {
 			v, e := ForgotPasswordsClient.Get(RedisCtx, key).Result()
-			CheckRedisErr(e)
+			CheckRedisErr(c, e)
 			var f ForgotPasswordEmailStruct
 			json.Unmarshal([]byte(v), &f)
 
@@ -132,10 +144,10 @@ func ForgotPasswordLinkPost(c *fiber.Ctx) error {
 						u2.Password = hexStr
 						marshaledUser, _ := json.Marshal(u)
 						err = UserClient.Set(RedisCtx, f.Email, marshaledUser, 0).Err()
-						CheckRedisErr(err)
+						CheckRedisErr(c, err)
 						// Remove the password link from redis Db: 5
 						err = ForgotPasswordsClient.Del(RedisCtx, f.Email).Err()
-						CheckRedisErr(err)
+						CheckRedisErr(c, err)
 						return c.JSON(map[string]string{"status": "success"})
 					} else {
 						// Why in the world wouldn't the passwords match?
