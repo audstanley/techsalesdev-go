@@ -1,0 +1,56 @@
+
+
+# Fake Authentication:
+# This will login a user based on username and password
+@baseUrl = {{$dotenv baseUrl}}
+
+## CREATE A NEW USER
+POST {{baseUrl}}/session/ HTTP/1.1
+content-type: application/json
+WWW-Authentication: upass
+Authorization: none
+Cookie: username=someUser2@gmail.com
+Cookie: password=somePassword
+
+###
+
+## INITIAL LOGIN
+# @name login
+GET {{baseUrl}}/session/ HTTP/1.1
+content-type: application/json
+WWW-Authentication: upass
+Authorization: none
+Cookie: username=someUser2@gmail.com
+Cookie: password=somePassword
+
+###
+
+## SUBSEQUENT Requests
+@authToken = {{login.response.headers.Authorization}}
+
+GET {{baseUrl}}/session/ HTTP/1.1
+content-type: application/json
+WWW-Authentication: token
+Authorization: {{authToken}}
+
+###
+
+
+## GUEST Initial Request
+# @name noAuth
+GET {{baseUrl}}/session/ HTTP/1.1
+content-type: application/json
+WWW-Authentication: none
+Authorization: none
+
+###
+
+
+## GUEST, SUBSEQUENT Requests
+@noAuthToken = {{noAuth.response.headers.Authorization}}
+
+GET {{baseUrl}}/session/ HTTP/1.1
+content-type: application/json
+WWW-Authentication: gtoken
+Authorization: {{noAuthToken}}
+

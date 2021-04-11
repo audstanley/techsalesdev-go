@@ -1,0 +1,10 @@
+@baseUrl = {{$dotenv baseUrl}}
+
+## Try To auth a user that DNE.
+# @name login
+GET {{baseUrl}}/session/ HTTP/1.1
+content-type: application/json
+WWW-Authentication: upass
+Authorization: none
+Cookie: username=iDontExist@gmail.com
+Cookie: password=amIaHacker?-maybe-justMaybe.

@@ -1,0 +1,20 @@
+@baseUrl = {{$dotenv baseUrl}}
+
+# check redis Db: 5 for a valid link (this hard coded hash wont work.)
+POST {{baseUrl}}/signup HTTP/1.1
+content-type: application/json
+WWW-Authentication: none
+Authorization: none
+
+{
+    "firstName": "plainTextPassword",
+    "lastName": "plainTextPassword",
+    "email": "newUser@gmail.com",
+    "password1": "newUser's Password", 
+    "password2": "newUser's Password", 
+    "address1": "123 Park St",
+    "address2": "",
+    "city": "Lake Forest",
+    "state": "CA",
+    "zip": 92630
+}

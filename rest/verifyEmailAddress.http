@@ -1,0 +1,7 @@
+# FrontEnd Requirement Only
+@baseUrl = {{$dotenv baseUrl}}
+
+GET {{baseUrl}}/sessionEmailPending/3x5iqtax2rk5nc2ukzzv1c HTTP/1.1
+content-type: application/json
+WWW-Authentication: none
+Authorization: none

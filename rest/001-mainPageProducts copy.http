@@ -1,0 +1,18 @@
+@baseUrl = {{$dotenv baseUrl}}
+
+## GUEST Initial Request
+# @name noAuth
+GET {{baseUrl}}/mainProductPage/ HTTP/1.1
+content-type: application/json
+WWW-Authentication: none
+Authorization: none
+
+###
+
+## GUEST, SUBSEQUENT Requests
+@noAuthToken = {{noAuth.response.headers.Authorization}}
+
+GET {{baseUrl}}/mainProductPage/ HTTP/1.1
+content-type: application/json
+WWW-Authentication: gtoken
+Authorization: {{noAuthToken}}
