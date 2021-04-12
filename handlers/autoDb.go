@@ -9,7 +9,7 @@ import (
 
 func AutoVerifyAUserInTheDatabase() {
 	email := "verifiedUser@gmail.com"
-	p := "123"
+	p := "12345678"
 	h := sha3.New512()
 	h.Write([]byte(p))
 	hexStr := hex.EncodeToString(h.Sum(nil))

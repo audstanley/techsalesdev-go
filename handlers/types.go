@@ -56,6 +56,7 @@ type FullUserSigningUp struct {
 	City      string `json:"city"`
 	State     string `json:"state"`
 	Zip       uint32 `json:"zip"`
+	Pending   bool   `json:"pending"`
 }
 
 // for request POST body /forgotPassword

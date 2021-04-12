@@ -1,7 +1,8 @@
 @baseUrl = {{$dotenv baseUrl}}
 
-## CREATE A NEW USER (this will create a link for email validation)
+## CREATE A (test) NEW USER (this will create a link for email validation)
 ## If SMTP is disabled, then you won't actually get an email verification
+## You can also create a proper user with 018-signup.http
 POST {{baseUrl}}/session/ HTTP/1.1
 content-type: application/json
 WWW-Authentication: upass
@@ -18,7 +19,7 @@ content-type: application/json
 WWW-Authentication: upass
 Authorization: none
 Cookie: username=verifiedUser@gmail.com
-Cookie: password=123
+Cookie: password=12345678
 
 ###
 
@@ -30,4 +31,5 @@ content-type: application/json
 WWW-Authentication: token
 Authorization: {{authToken}}
 
+{}
 ###

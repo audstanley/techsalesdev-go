@@ -9,7 +9,7 @@ import (
 	"net/smtp"
 	"time"
 
-	jwt "github.com/form3tech-oss/jwt-go"
+	"github.com/form3tech-oss/jwt-go"
 	"github.com/gofiber/fiber/v2"
 	"golang.org/x/crypto/sha3"
 )
@@ -34,12 +34,14 @@ func Session(c *fiber.Ctx) error {
 
 	wwwAuthentication := c.Get("WWW-Authentication")
 	authorization := c.Get("Authorization")
+	fmt.Println(c.Get("WWW-Authentication"))
 	switch wwwAuthentication {
 	case "upass":
-		// skip to CreateUser Handler (GET and POST methods)
+		// skip to CreateUser Handler (for POST)
 		if string(c.Request().Header.Method()) == "POST" {
 			CreateUser(c)
 		} else if string(c.Request().Header.Method()) == "GET" {
+			// User is logging in.
 			return c.Next()
 		}
 		return c.Next()
@@ -47,12 +49,18 @@ func Session(c *fiber.Ctx) error {
 	case "gtoken":
 		fmt.Println("handler.session code may need some attention for gtoken")
 		fmt.Println(wwwAuthentication, authorization)
-		c.Next()
+		return c.Next()
 
 	case "token":
 		fmt.Println("handler.session code may need some attention for token")
 		fmt.Println(wwwAuthentication, authorization)
-		c.Next()
+		c.Set("WWW-Authentication", "token")
+		currentToken := c.Get("Authorization", "")
+		if currentToken == "" {
+			fmt.Println("middleware: bad request token")
+			c.JSON(BadRequest)
+		}
+		return c.Next()
 	default:
 		token := jwt.New(jwt.SigningMethodHS256)
 		claims := token.Claims.(jwt.MapClaims)
@@ -71,13 +79,6 @@ func Session(c *fiber.Ctx) error {
 		return c.Next()
 		//return c.JSON(fiber.Map{"token": t, "type": "gtoken"})
 	}
-
-	// placeholder code:
-	token := jwt.New(jwt.SigningMethodHS256)
-	claims := token.Claims.(jwt.MapClaims)
-	claims["user"] = "placeholder"
-	t, _ := token.SignedString([]byte(Envs["ACCESS_TOKEN_SECRET"]))
-	return c.JSON(fiber.Map{"token": t})
 }
 
 func CreateUser(c *fiber.Ctx) error {
@@ -126,12 +127,16 @@ func CreateUser(c *fiber.Ctx) error {
 						fmt.Println("Error sending email", err)
 					}
 					fmt.Println("Email Sent Successfully!")
+					c.Status(200)
+					return c.JSON(map[string]string{"status": "OK"})
 				}
 			}
 			// Else, user needs to supply username/password
 		}
 	}
-	return c.SendStatus(200)
+	c.Status(400)
+	noUser, _ := json.Marshal(map[string]string{"status": "Did not Create User"})
+	return &fiber.Error{Code: 400, Message: string(noUser)}
 }
 
 func VerifyUserLogin(c *fiber.Ctx) error {
@@ -145,10 +150,7 @@ func VerifyUserLogin(c *fiber.Ctx) error {
 			if username != "" && password != "" {
 				var cursor uint64
 				keys, cursor, err := UserClient.Scan(RedisCtx, cursor, "*", 1000000).Result()
-				if err != nil {
-					fmt.Println("something wrong with keys")
-					panic(err)
-				}
+				CheckRedisErr(c, err)
 				fmt.Println(keys)
 				for _, key := range keys {
 					// we need to query redis for the object from the key.
@@ -163,8 +165,8 @@ func VerifyUserLogin(c *fiber.Ctx) error {
 						if u.Password == hexStr {
 							token := jwt.New(jwt.SigningMethodHS256)
 							claims := token.Claims.(jwt.MapClaims)
-							userString := RandStringBytes(16)
-							claims["user"] = userString
+
+							claims["user"] = u.Email
 							claims["exp"] = time.Now().Add(time.Hour * 72).Unix()
 							fmt.Println(wwwAuthentication, authorization)
 							t, err := token.SignedString([]byte(Envs["ACCESS_TOKEN_SECRET"]))
@@ -173,8 +175,9 @@ func VerifyUserLogin(c *fiber.Ctx) error {
 							}
 							c.Set("WWW-Authentication", "token")
 							c.Set("Authorization", t)
-							redisErr := UserTokensClient.Set(RedisCtx, userString, t, 0).Err()
+							redisErr := UserTokensClient.Set(RedisCtx, u.Email, t, 0).Err()
 							CheckRedisErr(c, redisErr)
+							return c.JSON(map[string]string{"status": "OK"})
 						}
 					}
 				}
@@ -182,8 +185,26 @@ func VerifyUserLogin(c *fiber.Ctx) error {
 			// Else, user needs to supply username/password
 			return c.JSON(map[string]string{"status": "Invalid Username or Password"})
 		}
+	case "token":
+		token, err := jwt.Parse(c.Get("Authorization", ""), func(token *jwt.Token) (interface{}, error) {
+			return []byte(Envs["ACCESS_TOKEN_SECRET"]), nil
+		})
+		if err != nil {
+			fmt.Println("token err", err)
+			return &fiber.Error{Code: fiber.ErrBadRequest.Code, Message: fiber.ErrBadRequest.Message}
+		}
+		claims := token.Claims.(jwt.MapClaims)
+		fmt.Println("token checks out:", claims["user"])
+		claims["exp"] = time.Now().Add(time.Hour * 72).Unix()
+		t, err := token.SignedString([]byte(Envs["ACCESS_TOKEN_SECRET"]))
+		c.Set("WWW-Authentication", "token")
+		c.Set("Authorization", t)
+		claimUserStr, _ := claims["user"].(string) // cast interface{} to string [ignore err since we know it's ok]
+		redisErr := UserTokensClient.Set(RedisCtx, claimUserStr, t, 0).Err()
+		CheckRedisErr(c, redisErr)
+		fmt.Println("boop")
+		return c.JSON(map[string]string{"status": "OK"})
 	}
-
 	return c.SendString("GET PLACEHOLDER - method DNE.")
 }
 
@@ -199,6 +220,18 @@ func Verify(c *fiber.Ctx) error {
 		var u EmailPendingUser
 		json.Unmarshal([]byte(v), &u)
 		if u.Link == c.Params("link", "") {
+			val, err := UserAddressesClient.Exists(RedisCtx, u.Email).Result()
+			CheckRedisErr(c, err)
+			if val == 1 {
+				//Update the adress saved user to note that they are no longer pending email verification
+				valOfAddress, _ := UserAddressesClient.Get(RedisCtx, u.Email).Result()
+				updateAddr := FullUserSigningUp{}
+				json.Unmarshal([]byte(valOfAddress), &updateAddr)
+				updateAddr.Pending = false
+				jm, _ := json.Marshal(updateAddr)
+
+				UserAddressesClient.Set(RedisCtx, u.Email, string(jm), 0)
+			}
 			EmailPending.Del(RedisCtx, key)
 			c.Status(200)
 			return c.JSON(map[string]string{"status": "user created"})

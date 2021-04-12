@@ -28,7 +28,8 @@ func main() {
 	app.Post("/forgotPassword", handlers.ForgotPassword)
 	app.Get("/forgotPassword/:link", handlers.ForgotPasswordLinkGet)
 	app.Post("/forgotPassword/:link", handlers.ForgotPasswordLinkPost)
-	app.Post("/signup", handlers.SignUp)
+	app.Post("/signup", handlers.SignUpARealUser)
+	app.Get("/:category", handlers.Categories)
 
 	// app.Use(jwtware.New(jwtware.Config{
 	// 	SigningKey: []byte(envs["ACCESS_TOKEN_SECRET"]),

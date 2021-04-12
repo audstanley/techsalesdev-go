@@ -17,9 +17,7 @@ func CheckRedisErr(c *fiber.Ctx, e error) error {
 		fmt.Println("REDIS ERROR", e)
 		fmt.Println("Make sure to set the environment variable: REDIS_PASS")
 		fmt.Println("Make sure the backend REDIS_ENDPOINT is pointed correctly (127.0.0.1:6379?)")
-		c.Status(500)
-		return c.JSON(map[string]string{"Status": "Internal Error"})
-		//panic(e)
+		return &fiber.Error{Code: fiber.ErrInternalServerError.Code, Message: fiber.ErrInternalServerError.Message}
 	}
 	return nil
 }
@@ -154,8 +152,7 @@ func ForgotPasswordLinkPost(c *fiber.Ctx) error {
 						// Why in the world wouldn't the password pass the regular expression match?
 						// The request is NOT coming from our frontend, so
 						// the request is nefarious, and therefore the user is "attempting to brew coffee with a teapot"
-						c.Status(418)
-						return c.JSON(map[string]string{"status": "The server refuses the attempt to brew coffee with a teapot."})
+						return &fiber.Error{Code: fiber.ErrTeapot.Code, Message: "The server refuses the attempt to brew coffee with a teapot."}
 					}
 				}
 			}

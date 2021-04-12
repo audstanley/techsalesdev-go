@@ -30,7 +30,26 @@ func RandBool() bool {
 	return rand.Intn(2) == 1
 }
 
+func populateCategories(m *map[string]string) {
+	(*m)["gameboy.jpeg"] = "PCB"
+	(*m)["joystick.jpg"] = "PCB"
+	(*m)["wires_01.jpg"] = "Wires"
+	(*m)["wires_02.jpg"] = "Wires"
+	(*m)["diodes_01.jpg"] = "Diodes"
+	(*m)["diodes_02.jpg"] = "Diodes"
+	(*m)["capacitors_01.jpg"] = "Caps"
+	(*m)["capacitors_02.png"] = "Caps"
+
+}
+
+func putInRandomCategory() string {
+	var categories = []string{"PCB", "Soldering", "Wires", "Caps", "Diodes"}
+	return categories[rand.Intn(4-0)]
+}
+
 func PopulateDatabaseWithImages() {
+	m := map[string]string{}
+	populateCategories(&m)
 	files, err := ioutil.ReadDir("./.products/photos")
 	if err != nil {
 		log.Fatal(err)
@@ -51,6 +70,10 @@ func PopulateDatabaseWithImages() {
 		reader := bufio.NewReader(file)
 		content, _ := ioutil.ReadAll(reader)
 		encoded := "data:image/" + extension + ";base64, " + base64.StdEncoding.EncodeToString(content)
+		c := m[f.Name()]
+		if c == "" {
+			c = putInRandomCategory()
+		}
 
 		p := &Product{
 			Name:        RandStringBytes(8),
@@ -61,11 +84,26 @@ func PopulateDatabaseWithImages() {
 			ProductId:   md5Hash,
 			OnSale:      RandBool(),
 			Iat:         epoch,
-			Category:    RandStringBytes(8),
+			Category:    c,
 		}
+
 		b, err := json.Marshal(p)
 		err = ProductsClient.Set(RedisCtx, md5Hash, string(b), 0).Err()
 		CheckRedisErrWithoutContext(err)
+		if p.Category == "PCB" {
+			err = PCBClient.Set(RedisCtx, md5Hash, string(b), 0).Err()
+			CheckRedisErrWithoutContext(err)
+		} else if p.Category == "Wires" {
+			err = WiresClient.Set(RedisCtx, md5Hash, string(b), 0).Err()
+			CheckRedisErrWithoutContext(err)
+		} else if p.Category == "Diodes" {
+			err = DiodesClient.Set(RedisCtx, md5Hash, string(b), 0).Err()
+			CheckRedisErrWithoutContext(err)
+		} else if p.Category == "Caps" {
+			err = CapsClient.Set(RedisCtx, md5Hash, string(b), 0).Err()
+			CheckRedisErrWithoutContext(err)
+		}
+
 		file.Close()
 	}
 
