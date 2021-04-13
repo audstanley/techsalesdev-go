@@ -23,43 +23,32 @@ func main() {
 	app.Use(handlers.Session)
 	app.Post("/session", handlers.CreateUser)
 	app.Get("/session", handlers.VerifyUserLogin)
+	// Verify a user from SMTP
 	app.Get("/verify/:link", handlers.Verify)
+	// Main page products
 	app.Get("/mainProductPage", handlers.MainProductPage)
+	// When the user forgot a password
 	app.Post("/forgotPassword", handlers.ForgotPassword)
+	// Where to get reset password link from
 	app.Get("/forgotPassword/:link", handlers.ForgotPasswordLinkGet)
+	// Were to post to actually reset password
 	app.Post("/forgotPassword/:link", handlers.ForgotPasswordLinkPost)
+	// Where to fully signup
 	app.Post("/signup", handlers.SignUpARealUser)
+	// Get the cart for the user (must have jwt)
+	app.Get("/cart", handlers.GetCart)
+	// Checkout with a simple post request (must be a user)
+	app.Post("/checkout", handlers.Checkout)
+	// Checkout with a simple post request (must be a user)
+	app.Post("/confirmationCode/:code", handlers.GetConfirmationStatus)
+	// Products based on category
 	app.Get("/:category", handlers.Categories)
-
-	// app.Use(jwtware.New(jwtware.Config{
-	// 	SigningKey: []byte(envs["ACCESS_TOKEN_SECRET"]),
-	// }))
-
-	//app.Get("/:name", handlers.UserList)
-
-	// GET /john/75
-	// app.Get("/:namefiber/:age", func(c *fiber.Ctx) error {
-	// 	msg := fmt.Sprintf("👴 %s is %s years old", c.Params("name"), c.Params("age"))
-	// 	return c.SendString(msg) // => 👴 john is 75 years old
-	// })
-
-	// // GET /dictionary.txt
-	// app.Get("/:file.:ext", func(c *fiber.Ctx) error {
-	// 	msg := fmt.Sprintf("📃 %s.%s", c.Params("file"), c.Params("ext"))
-	// 	return c.SendString(msg) // => 📃 dictionary.txt
-	// })
-
-	// // GET /flights/LAX-SFO
-	// app.Get("/flights/:from-:to", func(c *fiber.Ctx) error {
-	// 	msg := fmt.Sprintf("💸 From: %s, To: %s", c.Params("from"), c.Params("to"))
-	// 	return c.SendString(msg) // => 💸 From: LAX, To: SFO
-	// })
-
-	// // GET /api/register
-	// app.Get("/api/*", func(c *fiber.Ctx) error {
-	// 	msg := fmt.Sprintf("✋ %s", c.Params("*"))
-	// 	return c.SendString(msg) // => ✋ register
-	// })
+	// Adding a product based on the id
+	app.Get("/add/:productId", handlers.AddProduct)
+	// Removing a product based on the id
+	app.Get("/remove/:productId", handlers.RemoveProduct)
+	// Get the product directly (for image) [this will be needed for the cart page]
+	app.Get("/product/:productId", handlers.ProductImage)
 
 	log.Fatal(app.Listen(fmt.Sprintf(":%s", handlers.Envs["API_DEV_PORT"])))
 }

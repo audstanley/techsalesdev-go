@@ -1,6 +1,10 @@
 package handlers
 
-// in redis Db: 2
+// in redis Db: 2 (each product)
+// Db: 7 (pcb)
+// Db: 8 (wires)
+// Db: 9 (diodes)
+// Db: 10 (caps)
 type Product struct {
 	Name        string  `json:"name"`
 	Cost        float64 `json:"cost"`
@@ -13,7 +17,15 @@ type Product struct {
 	Category    string  `json:"category"`
 }
 
-// in redis Db: 2
+type ProductForCart struct {
+	Name      string  `json:"name"`
+	Cost      float64 `json:"cost"`
+	InStock   bool    `json:"inStock"`
+	ProductId string  `json:"productId"`
+	Amount    uint64  `json:"amount"`
+}
+
+// in redis Db: 2 (then assembled)
 type ProductReturn struct {
 	OnSale      []Product
 	NewArrivals []Product
@@ -27,7 +39,7 @@ type EmailPendingUser struct {
 	Link     string `json:"link"`
 }
 
-// in redis Db: 4
+// in redis Db: 1 (as string) and 4 (as a jwt)
 type User struct {
 	Email             string `json:"email"`
 	Password          string `json:"password"`
@@ -45,6 +57,7 @@ type UserShipping struct {
 	Zip       uint32 `json:"zip"`
 }
 
+// in redis Db: 6
 type FullUserSigningUp struct {
 	FirstName string `json:"firstName"`
 	LastName  string `json:"lastName"`
@@ -82,4 +95,19 @@ type PasswordChecker struct {
 	Password1         string `json:"password1"`
 	Password2         string `json:"password2"`
 	EmailVerification bool   `json:"emailVerification"`
+}
+
+// Db: 11
+type Cart struct {
+	Products         []ProductForCart `json:"products"`
+	Total            float64          `json:"total"`
+	ConfirmationCode string           `json:"confirmationCode"`
+	ShipTo           UserShipping     `json:"shipTo"`
+	Placed           bool             `json:"placed"`
+	Shipped          bool             `json:"shipped"`
+	Email            string           `json:"email"`
+}
+
+type Orders struct {
+	Orders []Cart `json:"total"`
 }

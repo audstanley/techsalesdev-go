@@ -7,8 +7,8 @@ WWW-Authentication: none
 Authorization: none
 
 {
-    "firstName": "plainTextPassword",
-    "lastName": "plainTextPassword",
+    "firstName": "newSignedUpUserFirstName",
+    "lastName": "newSignedUpUserLastName",
     "email": "newUser@gmail.com",
     "password1": "newUser's Password", 
     "password2": "newUser's Password", 

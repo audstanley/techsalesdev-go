@@ -60,6 +60,23 @@ func Session(c *fiber.Ctx) error {
 			fmt.Println("middleware: bad request token")
 			c.JSON(BadRequest)
 		}
+		token, err := jwt.Parse(c.Get("Authorization", ""), func(token *jwt.Token) (interface{}, error) {
+			return []byte(Envs["ACCESS_TOKEN_SECRET"]), nil
+		})
+		if err != nil {
+			fmt.Println("token err", err)
+			return &fiber.Error{Code: fiber.ErrBadRequest.Code, Message: fiber.ErrBadRequest.Message}
+		}
+		claims := token.Claims.(jwt.MapClaims)
+		fmt.Println("token checks out:", claims["user"])
+		claims["exp"] = time.Now().Add(time.Hour * 72).Unix()
+		t, err := token.SignedString([]byte(Envs["ACCESS_TOKEN_SECRET"]))
+		c.Set("WWW-Authentication", "token")
+		c.Set("Authorization", t)
+		claimUserStr, _ := claims["user"].(string) // cast interface{} to string [ignore err since we know it's ok]
+		redisErr := UserTokensClient.Set(RedisCtx, claimUserStr, t, 0).Err()
+		CheckRedisErr(c, redisErr)
+		fmt.Println("boop")
 		return c.Next()
 	default:
 		token := jwt.New(jwt.SigningMethodHS256)
@@ -186,23 +203,8 @@ func VerifyUserLogin(c *fiber.Ctx) error {
 			return c.JSON(map[string]string{"status": "Invalid Username or Password"})
 		}
 	case "token":
-		token, err := jwt.Parse(c.Get("Authorization", ""), func(token *jwt.Token) (interface{}, error) {
-			return []byte(Envs["ACCESS_TOKEN_SECRET"]), nil
-		})
-		if err != nil {
-			fmt.Println("token err", err)
-			return &fiber.Error{Code: fiber.ErrBadRequest.Code, Message: fiber.ErrBadRequest.Message}
-		}
-		claims := token.Claims.(jwt.MapClaims)
-		fmt.Println("token checks out:", claims["user"])
-		claims["exp"] = time.Now().Add(time.Hour * 72).Unix()
-		t, err := token.SignedString([]byte(Envs["ACCESS_TOKEN_SECRET"]))
-		c.Set("WWW-Authentication", "token")
-		c.Set("Authorization", t)
-		claimUserStr, _ := claims["user"].(string) // cast interface{} to string [ignore err since we know it's ok]
-		redisErr := UserTokensClient.Set(RedisCtx, claimUserStr, t, 0).Err()
-		CheckRedisErr(c, redisErr)
-		fmt.Println("boop")
+		// The json web token gets verified in the "Session" function middleware
+		// Otherwise, the API wont get to this response.
 		return c.JSON(map[string]string{"status": "OK"})
 	}
 	return c.SendString("GET PLACEHOLDER - method DNE.")

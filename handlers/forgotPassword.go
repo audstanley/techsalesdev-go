@@ -55,7 +55,7 @@ func ForgotPassword(c *fiber.Ctx) error {
 	err = ForgotPasswordsClient.Set(RedisCtx, email.Email, forgotPasswordEmailStructAsString, 0).Err()
 	CheckRedisErr(c, err)
 
-	if DisableSendingEmail == false {
+	if !DisableSendingEmail {
 		// Send email to newly created user
 		to := []string{email.Email}
 

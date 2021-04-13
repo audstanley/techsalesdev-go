@@ -1,0 +1,23 @@
+@baseUrl = {{$dotenv baseUrl}}
+
+## INITIAL LOGIN (need to have a token to add to cart)
+# @name login
+GET {{baseUrl}}/session/ HTTP/1.1
+content-type: application/json
+WWW-Authentication: upass
+Authorization: none
+Cookie: username=verifiedUser@gmail.com
+Cookie: password=12345678
+
+###
+
+## SUBSEQUENT Requests (then you can add to cart) [The product hash MUST be valid - obviously]
+@authToken = {{login.response.headers.Authorization}}
+
+GET {{baseUrl}}/add/4dfeee2630f690510dce5e2a01d585e2 HTTP/1.1
+content-type: application/json
+WWW-Authentication: token
+Authorization: {{authToken}}
+
+{}
+###

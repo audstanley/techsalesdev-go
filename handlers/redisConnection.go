@@ -84,3 +84,24 @@ var CapsClient = redis.NewClient(&redis.Options{
 	DB:         10,
 	MaxRetries: 3,
 })
+
+var UsersCartClient = redis.NewClient(&redis.Options{
+	Addr:       Envs["REDIS_ENDPOINT"],
+	Password:   Envs["REDIS_PASS"],
+	DB:         11,
+	MaxRetries: 3,
+})
+
+var OrdersClient = redis.NewClient(&redis.Options{
+	Addr:       Envs["REDIS_ENDPOINT"],
+	Password:   Envs["REDIS_PASS"],
+	DB:         12,
+	MaxRetries: 3,
+})
+
+var ConfirmationCodesClient = redis.NewClient(&redis.Options{
+	Addr:       Envs["REDIS_ENDPOINT"],
+	Password:   Envs["REDIS_PASS"],
+	DB:         13,
+	MaxRetries: 3,
+})
