@@ -1,5 +1,7 @@
 package handlers
 
+import "math/big"
+
 // in redis Db: 2 (each product)
 // Db: 7 (pcb)
 // Db: 8 (wires)
@@ -110,4 +112,17 @@ type Cart struct {
 
 type Orders struct {
 	Orders []Cart `json:"total"`
+}
+
+type EtheriumWallet struct {
+	Private  string    `json:"private"`
+	Public   string    `json:"public"`
+	Pending  bool      `json:"pending"`
+	Ballance big.Float `json:"ballance"`
+	Email    string    `json:"email"`
+}
+
+type PrivatePaymentOrders struct {
+	Orders []Cart           `json:"total"`
+	Wallet []EtheriumWallet `json:"wallet"`
 }

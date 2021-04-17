@@ -114,7 +114,6 @@ func RemoveProduct(c *fiber.Ctx) error {
 				copy(cart.Products[i:], cart.Products[i+1:])
 				cart.Products[len(cart.Products)-1] = ProductForCart{}
 				cart.Products = cart.Products[:len(cart.Products)-1]
-
 			}
 			productFound = true
 		}

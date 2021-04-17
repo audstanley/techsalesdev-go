@@ -1,12 +1,16 @@
 package handlers
 
 import (
+	"crypto/ecdsa"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/smtp"
 	"time"
 
+	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/gofiber/fiber/v2"
 	"golang.org/x/crypto/sha3"
 )
@@ -78,6 +82,25 @@ func SignUpARealUser(c *fiber.Ctx) error {
 	// Send Data over to Redis
 	err = EmailPending.Set(RedisCtx, fullUser.Email, string(um), 0).Err()
 	CheckRedisErr(c, err)
+
+	// Create an Etherium wallet for the new user
+	// Generate a key for the user to send funds to:
+	privateKey, err := crypto.GenerateKey()
+	privateKeyBytes := crypto.FromECDSA(privateKey)
+	publicKey := privateKey.Public()
+	publicKeyECDSA, ok := publicKey.(*ecdsa.PublicKey)
+	if !ok {
+		log.Fatal("error casting public key to ECDSA")
+	}
+	wallet := EtheriumWallet{Pending: true}
+	wallet.Private = hexutil.Encode(privateKeyBytes)
+	wallet.Public = crypto.PubkeyToAddress(*publicKeyECDSA).Hex()
+	wallet.Email = fullUser.Email
+	jmWallet, _ := json.Marshal(&wallet)
+	err = UserWalletsClient.Set(RedisCtx, fullUser.Email, string(jmWallet), 0).Err()
+	CheckRedisErr(c, err)
+
+	// send email to user that they have a new account
 	if DisableSendingEmail == false {
 		// Send email to newly created user
 		to := []string{fullUser.Email}

@@ -33,6 +33,7 @@ func GetEnvironment() map[string]string {
 		"SMTP_PASS":           goDotEnvVariable("SMTP_PASS"),
 		"REDIS_PASS":          goDotEnvVariable("REDIS_PASS"),
 		"REDIS_ENDPOINT":      goDotEnvVariable("REDIS_ENDPOINT"),
+		"ETHERIUM_NETWORK":    goDotEnvVariable("ETHERIUM_NETWORK"),
 	}
 	for k, v := range envs {
 		if checkForEmptyEnvironment(v) {

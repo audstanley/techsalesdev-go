@@ -12,6 +12,7 @@ REDIS_PASS=thePasswordForRedis
 REDIS_ENDPOINT=127.0.0.1:6379
 API_DEV_PORT=8084
 ACCESS_TOKEN_SECRET=SomeAccessTokenThatCanBeUsedAcrossMicroServices
+ETHERIUM_NETWORK=https://someEtheriumNetwork.com
 ```
 
 Then run the binary for your archetecture within the same folder as the .env

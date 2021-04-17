@@ -105,3 +105,17 @@ var ConfirmationCodesClient = redis.NewClient(&redis.Options{
 	DB:         13,
 	MaxRetries: 3,
 })
+
+var UserWalletsClient = redis.NewClient(&redis.Options{
+	Addr:       Envs["REDIS_ENDPOINT"],
+	Password:   Envs["REDIS_PASS"],
+	DB:         14,
+	MaxRetries: 3,
+})
+
+var PrivateOrdersClient = redis.NewClient(&redis.Options{
+	Addr:       Envs["REDIS_ENDPOINT"],
+	Password:   Envs["REDIS_PASS"],
+	DB:         15,
+	MaxRetries: 3,
+})

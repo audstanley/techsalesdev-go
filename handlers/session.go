@@ -233,6 +233,15 @@ func Verify(c *fiber.Ctx) error {
 				jm, _ := json.Marshal(updateAddr)
 
 				UserAddressesClient.Set(RedisCtx, u.Email, string(jm), 0)
+
+				// Update the user's Wallet (no longer pending)
+				wallet := EtheriumWallet{}
+				walletStr, _ := UserWalletsClient.Get(RedisCtx, u.Email).Result()
+				json.Unmarshal([]byte(walletStr), &wallet)
+				wallet.Pending = false
+				jmWallet, _ := json.Marshal(wallet)
+				// update the wallet, so they are no longer in pending status
+				UserAddressesClient.Set(RedisCtx, u.Email, string(jmWallet), 0).Err()
 			}
 			EmailPending.Del(RedisCtx, key)
 			c.Status(200)

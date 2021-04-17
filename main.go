@@ -6,6 +6,7 @@ import (
 	"main/handlers"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/cors"
 )
 
 func main() {
@@ -19,6 +20,11 @@ func main() {
 	}
 
 	app := fiber.New()
+	app.Use(cors.New(cors.Config{
+		AllowOrigins:  "*",
+		AllowHeaders:  "*",
+		ExposeHeaders: "*",
+	}))
 	// Sessions Handler
 	app.Use(handlers.Session)
 	app.Post("/session", handlers.CreateUser)
@@ -31,7 +37,7 @@ func main() {
 	app.Post("/forgotPassword", handlers.ForgotPassword)
 	// Where to get reset password link from
 	app.Get("/forgotPassword/:link", handlers.ForgotPasswordLinkGet)
-	// Were to post to actually reset password
+	// Where to post to actually reset password
 	app.Post("/forgotPassword/:link", handlers.ForgotPasswordLinkPost)
 	// Where to fully signup
 	app.Post("/signup", handlers.SignUpARealUser)
@@ -39,6 +45,8 @@ func main() {
 	app.Get("/cart", handlers.GetCart)
 	// Checkout with a simple post request (must be a user)
 	app.Post("/checkout", handlers.Checkout)
+	// FOR TESTING ONLY!.  View the ballance for all walllets
+	app.Get("/wallets", handlers.Wallets)
 	// Checkout with a simple post request (must be a user)
 	app.Post("/confirmationCode/:code", handlers.GetConfirmationStatus)
 	// Products based on category
