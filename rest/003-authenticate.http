@@ -40,8 +40,8 @@ Authorization: {{authToken}}
 # EXAMPLE OF AN INITIAL LOGIN FETCH REQUEST USING THE NEW X-USERNAME, X-PASSWORD HEADERS
 # THIS IS SAFE - AS LONG AS THE SERVER IS ALWAYS RUNNING SSL.
 #
-# fetch("http://127.0.0.1:8084/session/", { 
-#     method: "POST", credentials: "include", 
+# fetch("https://api.techsales.dev/session/", { 
+#     method: "POST", 
 #     headers: { 
 #         "www-Authentication": "upass", 
 #         "Authorization": "none", 
@@ -49,6 +49,10 @@ Authorization: {{authToken}}
 #         "x-password": "12345678" 
 #     }
 # })
-#     .then(d => d.json())
+#     .then(d => {
+#         console.log("www-authentication header response from server:", d.headers.get('www-authentication'))
+#         console.log("authorization header response from server:", d.headers.get('authorization'))
+#         return d.json()
+#     })
 #     .then(d => console.log(d))
 #     .catch(e => console.log("error", e))
