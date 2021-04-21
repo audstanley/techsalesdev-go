@@ -22,7 +22,7 @@ func main() {
 	app := fiber.New()
 	app.Use(cors.New(cors.Config{
 		AllowOrigins:     "*",
-		AllowHeaders:     "*",
+		AllowHeaders:     "www-authentication, authorization, x-username, x-password",
 		ExposeHeaders:    "*",
 		AllowCredentials: true,
 	}))
