@@ -3,23 +3,25 @@
 ## CREATE A (test) NEW USER (this will create a link for email validation)
 ## If SMTP is disabled, then you won't actually get an email verification
 ## You can also create a proper user with 018-signup.http
-POST {{baseUrl}}/session/ HTTP/1.1
-content-type: application/json
-WWW-Authentication: upass
-Authorization: none
-Cookie: username=someUser2@gmail.com
-Cookie: password=somePassword
+
+# WILL BE DEPRECATED
+# POST {{baseUrl}}/session/ HTTP/1.1
+# content-type: application/json
+# WWW-Authentication: upass
+# Authorization: none
+# x-username: verifiedUser@gmail.com
+# x-password: 12345678
 
 ###
 
 ## INITIAL LOGIN
 # @name login
-GET {{baseUrl}}/session/ HTTP/1.1
+POST {{baseUrl}}/session/ HTTP/1.1
 content-type: application/json
 WWW-Authentication: upass
 Authorization: none
-Cookie: username=verifiedUser@gmail.com
-Cookie: password=12345678
+x-username: verifiedUser@gmail.com
+x-password: 123456780
 
 ###
 
@@ -33,3 +35,20 @@ Authorization: {{authToken}}
 
 {}
 ###
+
+
+# EXAMPLE OF AN INITIAL LOGIN FETCH REQUEST USING THE NEW X-USERNAME, X-PASSWORD HEADERS
+# THIS IS SAFE - AS LONG AS THE SERVER IS ALWAYS RUNNING SSL.
+#
+# fetch("http://127.0.0.1:8084/session/", { 
+#     method: "POST", credentials: "include", 
+#     headers: { 
+#         "www-Authentication": "upass", 
+#         "Authorization": "none", 
+#         "x-username": "verifiedUser@gmail.com", 
+#         "x-password": "12345678" 
+#     }
+# })
+#     .then(d => d.json())
+#     .then(d => console.log(d))
+#     .catch(e => console.log("error", e))

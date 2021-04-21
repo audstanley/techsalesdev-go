@@ -30,7 +30,6 @@ var RedisCtx = context.Background()
 
 func Session(c *fiber.Ctx) error {
 	fmt.Println("session middleware called")
-	fmt.Println(c.Cookies("username"), c.Cookies("password"))
 
 	wwwAuthentication := c.Get("WWW-Authentication")
 	authorization := c.Get("Authorization")
@@ -38,9 +37,10 @@ func Session(c *fiber.Ctx) error {
 	switch wwwAuthentication {
 	case "upass":
 		// skip to CreateUser Handler (for POST)
-		if string(c.Request().Header.Method()) == "POST" {
+		if string(c.Request().Header.Method()) == "WAS_POST" {
+			// DEPRECATED
 			CreateUser(c)
-		} else if string(c.Request().Header.Method()) == "GET" {
+		} else if string(c.Request().Header.Method()) == "POST" {
 			// User is logging in.
 			return c.Next()
 		}
@@ -99,13 +99,14 @@ func Session(c *fiber.Ctx) error {
 }
 
 func CreateUser(c *fiber.Ctx) error {
+	// WILL BE DEPRECATED
 	wwwAuthentication := c.Get("WWW-Authentication")
 	authorization := c.Get("Authorization")
 	switch wwwAuthentication {
 	case "upass":
 		if authorization == "none" {
-			username := c.Cookies("username")
-			password := c.Cookies("password")
+			username := c.Get("x-username")
+			password := c.Get("x-password")
 			if username != "" && password != "" {
 				link := RandStringBytes(32)
 				h := sha3.New512()
@@ -159,11 +160,13 @@ func CreateUser(c *fiber.Ctx) error {
 func VerifyUserLogin(c *fiber.Ctx) error {
 	wwwAuthentication := c.Get("WWW-Authentication")
 	authorization := c.Get("Authorization")
+
 	switch wwwAuthentication {
 	case "upass":
 		if authorization == "none" {
-			username := c.Cookies("username")
-			password := c.Cookies("password")
+			username := c.Get("x-username")
+			password := c.Get("x-password")
+
 			if username != "" && password != "" {
 				var cursor uint64
 				keys, cursor, err := UserClient.Scan(RedisCtx, cursor, "*", 1000000).Result()

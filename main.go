@@ -21,14 +21,16 @@ func main() {
 
 	app := fiber.New()
 	app.Use(cors.New(cors.Config{
-		AllowOrigins:  "*",
-		AllowHeaders:  "*",
-		ExposeHeaders: "*",
+		AllowOrigins:     "*",
+		AllowHeaders:     "*",
+		ExposeHeaders:    "*",
+		AllowCredentials: true,
 	}))
+
 	// Sessions Handler
 	app.Use(handlers.Session)
-	app.Post("/session", handlers.CreateUser)
-	app.Get("/session", handlers.VerifyUserLogin)
+	//app.Post("/session", handlers.CreateUser)
+	app.Post("/session", handlers.VerifyUserLogin)
 	// Verify a user from SMTP
 	app.Get("/verify/:link", handlers.Verify)
 	// Main page products

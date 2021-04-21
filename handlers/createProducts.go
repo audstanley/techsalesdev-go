@@ -39,7 +39,6 @@ func populateCategories(m *map[string]string) {
 	(*m)["diodes_02.jpg"] = "Diodes"
 	(*m)["capacitors_01.jpg"] = "Caps"
 	(*m)["capacitors_02.png"] = "Caps"
-
 }
 
 func putInRandomCategory() string {
