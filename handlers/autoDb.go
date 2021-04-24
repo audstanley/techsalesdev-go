@@ -12,7 +12,7 @@ import (
 )
 
 func AutoVerifyAUserInTheDatabase() {
-	email := "verifiedUser@gmail.com"
+	email := "verifieduser@gmail.com"
 	p := "12345678"
 	h := sha3.New512()
 	h.Write([]byte(p))
