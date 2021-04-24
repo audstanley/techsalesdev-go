@@ -54,7 +54,6 @@ func PopulateDatabaseWithImages() {
 	if err != nil {
 		log.Fatal(err)
 	}
-
 	for _, f := range files {
 		// Get the extension for the photo file
 		extension := filepath.Ext(f.Name())
@@ -76,7 +75,8 @@ func PopulateDatabaseWithImages() {
 		}
 
 		p := &Product{
-			Name:        RandStringBytes(8),
+			// Name:        RandStringBytes(8),
+			Name:        f.Name(),
 			Cost:        float64(rand.Intn(50-1) + 1),
 			Description: RandStringBytes(8),
 			Image:       encoded,
