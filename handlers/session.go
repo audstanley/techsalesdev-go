@@ -168,6 +168,7 @@ func VerifyUserLogin(c *fiber.Ctx) error {
 			password := c.Get("x-password")
 
 			if username != "" && password != "" {
+
 				var cursor uint64
 				keys, cursor, err := UserClient.Scan(RedisCtx, cursor, "*", 1000000).Result()
 				CheckRedisErr(c, err)
