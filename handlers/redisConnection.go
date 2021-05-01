@@ -29,6 +29,7 @@ var ProductsClient = redis.NewClient(&redis.Options{
 })
 
 // md5Hash : { OnSale : []Product, NewArrivals : []Product }
+// DB 3
 var EmailPending = redis.NewClient(&redis.Options{
 	Addr:       Envs["REDIS_ENDPOINT"],
 	Password:   Envs["REDIS_PASS"],

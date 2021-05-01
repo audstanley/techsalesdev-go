@@ -22,7 +22,7 @@ func main() {
 	app := fiber.New()
 	app.Use(cors.New(cors.Config{
 		AllowOrigins:     "*",
-		AllowHeaders:     "www-authentication, authorization, x-username, x-password",
+		AllowHeaders:     "www-authentication, authorization, x-username, x-password, content-type",
 		ExposeHeaders:    "*",
 		AllowCredentials: true,
 	}))
@@ -57,6 +57,8 @@ func main() {
 	app.Get("/add/:productId", handlers.AddProduct)
 	// Removing a product based on the id
 	app.Get("/remove/:productId", handlers.RemoveProduct)
+	// Remove all the products from user's cart
+	app.Get("/removeAll/:productId", handlers.RemoveAllProducts)
 	// Get the product directly (for image) [this will be needed for the cart page]
 	app.Get("/product/:productId", handlers.ProductImage)
 

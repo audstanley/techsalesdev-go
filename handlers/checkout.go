@@ -93,7 +93,7 @@ func Checkout(c *fiber.Ctx) error {
 			"\r\n" +
 			"You placed an order on our website.\r\n" +
 			"You can check your order her: \r\n" +
-			"    https://www.techsales.dev/confirmationCode/" + cart.ConfirmationCode + "\r\n")
+			"    https://api.techsales.dev/confirmationCode/" + cart.ConfirmationCode + "\r\n")
 
 		// Sending email.
 		err := smtp.SendMail(smtpHost+":"+smtpPort, auth, Envs["SMTP_ACCOUNT"], to, msg)

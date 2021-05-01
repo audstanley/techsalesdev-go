@@ -69,7 +69,7 @@ func ForgotPassword(c *fiber.Ctx) error {
 			"\r\n" +
 			"Your password for TechSales.dev was requested for reset.\r\n" +
 			"Click here to verify your reset your password: \r\n" +
-			"    https://www.techsales.dev/forgotPassword/" + "PLACEHOLDER" + "\r\n" +
+			"    https://api.techsales.dev/forgotPassword/" + email.Link + "\r\n" +
 			"if this was not you, you can ignore this email.\r\n")
 
 		// Sending email.

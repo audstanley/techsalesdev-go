@@ -36,28 +36,33 @@ func SignUpARealUser(c *fiber.Ctx) error {
 	fullUser := FullUserSigningUp{}
 	err := c.BodyParser(&fullUser)
 	fullUser.Pending = true
+	fmt.Println("NEW USER ATTEMPT:", fullUser)
 
 	if err != nil {
+		fmt.Println(`Parsing Error`, err)
 		return &fiber.Error{Code: 400, Message: `{ "status": "Could not parse body" }`}
 	}
 	err = CheckFullUserRegex(c, &fullUser)
 	if err != nil {
 		return err
 	}
-	// make sure the user isn't already pending email
-	val, err := EmailPending.Exists(RedisCtx, fullUser.Email).Result()
-	CheckRedisErr(c, err)
-	if val == 1 {
-		return &fiber.Error{Code: 400, Message: `{ "status": "Email is already pending" }`}
-	}
 
 	// make sure the user isn't already a user
-	val, err = UserClient.Exists(RedisCtx, fullUser.Email).Result()
+	val, err := UserClient.Exists(RedisCtx, fullUser.Email).Result()
 	CheckRedisErr(c, err)
+	fmt.Println("Already User?", val)
 	if val == 1 {
 		// If the user already exists, but is updating their profile, we will want to
 		// check the jwt to let them update their account. Eventually (maybe a TODO).
 		return &fiber.Error{Code: 400, Message: `{ "status": "This account already exists" }`}
+	}
+
+	// make sure the user isn't already pending email
+	val, err = EmailPending.Exists(RedisCtx, fullUser.Email).Result()
+	CheckRedisErr(c, err)
+	if val == 1 {
+		c.Status(400)
+		return c.JSON(map[string]string{"status": "Email is already pending"})
 	}
 
 	// Put the user in the address database.
@@ -77,9 +82,13 @@ func SignUpARealUser(c *fiber.Ctx) error {
 		Iat:      uint64(time.Now().Unix()),
 		Link:     link,
 	}
+
+	// UserClient - redis db 1 ERROR!!!!
+
 	// User Marshalled JSON
 	um, _ := json.Marshal(emailUser)
 	// Send Data over to Redis
+	fmt.Println("putting user in Db3: EmailPending:", string(um))
 	err = EmailPending.Set(RedisCtx, fullUser.Email, string(um), 0).Err()
 	CheckRedisErr(c, err)
 
@@ -115,7 +124,7 @@ func SignUpARealUser(c *fiber.Ctx) error {
 			"\r\n" +
 			"You recently signed up for TechSales.dev.\r\n" +
 			"Click here to verify your email address: \r\n" +
-			"    https://www.techsales.dev/verify/" + link + "\r\n")
+			"    https://api.techsales.dev/verify/" + link + "\r\n")
 
 		// Sending email.
 		err := smtp.SendMail(smtpHost+":"+smtpPort, auth, Envs["SMTP_ACCOUNT"], to, msg)

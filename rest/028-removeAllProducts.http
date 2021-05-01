@@ -1,16 +1,6 @@
 @baseUrl = {{$dotenv baseUrl}}
 
-## CREATE A NEW USER
-POST {{baseUrl}}/session/ HTTP/1.1
-content-type: application/json
-WWW-Authentication: upass
-Authorization: none
-Cookie: username=someUser3@gmail.com
-Cookie: password=somePassword
-
-###
-
-## INITIAL LOGIN
+## INITIAL LOGIN (need to have a token to add to cart)
 # @name login
 POST {{baseUrl}}/session/ HTTP/1.1
 content-type: application/json
@@ -20,12 +10,13 @@ x-username: verifieduser@gmail.com
 x-password: 12345678
 ###
 
-## SUBSEQUENT Requests
+## SUBSEQUENT Requests (then you can add to cart)
 @authToken = {{login.response.headers.Authorization}}
 
-GET {{baseUrl}}/session/ HTTP/1.1
+GET {{baseUrl}}/removeAll/4dfeee2630f690510dce5e2a01d585e2 HTTP/1.1
 content-type: application/json
 WWW-Authentication: token
 Authorization: {{authToken}}
 
+{}
 ###

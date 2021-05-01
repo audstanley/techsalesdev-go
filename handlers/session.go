@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"math/rand"
 	"net/smtp"
+	"strings"
 	"time"
 
 	"github.com/form3tech-oss/jwt-go"
@@ -14,7 +15,7 @@ import (
 	"golang.org/x/crypto/sha3"
 )
 
-var DisableSendingEmail = true
+var DisableSendingEmail = false
 
 const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
@@ -29,6 +30,7 @@ func RandStringBytes(n int) string {
 var RedisCtx = context.Background()
 
 func Session(c *fiber.Ctx) error {
+	// Middleware for user sessions
 	fmt.Println("session middleware called")
 
 	wwwAuthentication := c.Get("WWW-Authentication")
@@ -36,7 +38,7 @@ func Session(c *fiber.Ctx) error {
 	fmt.Println(c.Get("WWW-Authentication"))
 	switch wwwAuthentication {
 	case "upass":
-		// skip to CreateUser Handler (for POST)
+		// skip to CreateUseUserClientr Handler (for POST)
 		if string(c.Request().Header.Method()) == "WAS_POST" {
 			// DEPRECATED
 			CreateUser(c)
@@ -78,24 +80,14 @@ func Session(c *fiber.Ctx) error {
 		CheckRedisErr(c, redisErr)
 		fmt.Println("boop")
 		return c.Next()
-	default:
-		token := jwt.New(jwt.SigningMethodHS256)
-		claims := token.Claims.(jwt.MapClaims)
-		userString := RandStringBytes(16)
-		claims["user"] = userString
-		claims["exp"] = time.Now().Add(time.Hour * 72).Unix()
-		fmt.Println(wwwAuthentication, authorization)
-		t, err := token.SignedString([]byte(Envs["ACCESS_TOKEN_SECRET"]))
-		if err != nil {
-			return c.SendStatus(fiber.StatusInternalServerError)
-		}
-		c.Set("WWW-Authentication", "gtoken")
-		c.Set("Authorization", t)
-		redisErr := GtokenClient.Set(RedisCtx, userString, t, 0).Err()
-		CheckRedisErr(c, redisErr)
+	case "none":
 		return c.Next()
-		//return c.JSON(fiber.Map{"token": t, "type": "gtoken"})
+	default:
+
+		return c.Next()
+
 	}
+
 }
 
 func CreateUser(c *fiber.Ctx) error {
@@ -107,6 +99,7 @@ func CreateUser(c *fiber.Ctx) error {
 		if authorization == "none" {
 			username := c.Get("x-username")
 			password := c.Get("x-password")
+			username = strings.ToLower(username)
 			if username != "" && password != "" {
 				link := RandStringBytes(32)
 				h := sha3.New512()
@@ -137,7 +130,7 @@ func CreateUser(c *fiber.Ctx) error {
 						"\r\n" +
 						"You recently signed up for TechSales.dev.\r\n" +
 						"Click here to verify your email address: \r\n" +
-						"    https://www.techsales.dev/verify/" + link + "\r\n")
+						"    https://api.techsales.dev/verify/" + link + "\r\n")
 
 					// Sending email.
 					err := smtp.SendMail(smtpHost+":"+smtpPort, auth, Envs["SMTP_ACCOUNT"], to, msg)
@@ -166,7 +159,7 @@ func VerifyUserLogin(c *fiber.Ctx) error {
 		if authorization == "none" {
 			username := c.Get("x-username")
 			password := c.Get("x-password")
-
+			username = strings.ToLower(username)
 			if username != "" && password != "" {
 
 				var cursor uint64
@@ -203,6 +196,7 @@ func VerifyUserLogin(c *fiber.Ctx) error {
 					}
 				}
 			}
+			c.Status(400)
 			// Else, user needs to supply username/password
 			return c.JSON(map[string]string{"status": "Invalid Username or Password"})
 		}
@@ -219,6 +213,7 @@ func Verify(c *fiber.Ctx) error {
 	var cursor uint64
 	keys, cursor, err := EmailPending.Scan(RedisCtx, cursor, "*", 1000000).Result()
 	CheckRedisErr(c, err)
+
 	for _, key := range keys {
 		// we need to query redis for the object from the key.
 		v, e := EmailPending.Get(RedisCtx, key).Result()
@@ -227,29 +222,42 @@ func Verify(c *fiber.Ctx) error {
 		json.Unmarshal([]byte(v), &u)
 		if u.Link == c.Params("link", "") {
 			val, err := UserAddressesClient.Exists(RedisCtx, u.Email).Result()
+			fmt.Println("userAddressClient.Exists in verify Redis result is value of:", val)
 			CheckRedisErr(c, err)
 			if val == 1 {
-				//Update the adress saved user to note that they are no longer pending email verification
-				valOfAddress, _ := UserAddressesClient.Get(RedisCtx, u.Email).Result()
-				updateAddr := FullUserSigningUp{}
-				json.Unmarshal([]byte(valOfAddress), &updateAddr)
-				updateAddr.Pending = false
-				jm, _ := json.Marshal(updateAddr)
-
-				UserAddressesClient.Set(RedisCtx, u.Email, string(jm), 0)
-
-				// Update the user's Wallet (no longer pending)
-				wallet := EtheriumWallet{}
-				walletStr, _ := UserWalletsClient.Get(RedisCtx, u.Email).Result()
-				json.Unmarshal([]byte(walletStr), &wallet)
-				wallet.Pending = false
-				jmWallet, _ := json.Marshal(wallet)
-				// update the wallet, so they are no longer in pending status
-				UserAddressesClient.Set(RedisCtx, u.Email, string(jmWallet), 0).Err()
+				var uc User
+				uc.Email = u.Email
+				uc.Password = u.Password
+				uc.EmailVerification = true
+				ucjm, _ := json.Marshal(uc)
+				UserClient.Set(RedisCtx, u.Email, string(ucjm), 0).Err()
+			} else {
+				c.Status(400)
+				return c.JSON(map[string]string{"status": "user already registered."})
 			}
+
+			// Update the adress saved user to note that they are no longer pending email verification
+			valOfAddress, _ := UserAddressesClient.Get(RedisCtx, u.Email).Result()
+			updateAddr := FullUserSigningUp{}
+			json.Unmarshal([]byte(valOfAddress), &updateAddr)
+			updateAddr.Pending = false
+			jm, _ := json.Marshal(updateAddr)
+
+			UserAddressesClient.Set(RedisCtx, u.Email, string(jm), 0)
+
+			// Update the user's Wallet (no longer pending)
+			wallet := EtheriumWallet{}
+			walletStr, _ := UserWalletsClient.Get(RedisCtx, u.Email).Result()
+			json.Unmarshal([]byte(walletStr), &wallet)
+			wallet.Pending = false
+			jmWallet, _ := json.Marshal(wallet)
+			// update the wallet, so they are no longer in pending status
+			UserAddressesClient.Set(RedisCtx, u.Email, string(jmWallet), 0).Err()
+
+			// }
 			EmailPending.Del(RedisCtx, key)
 			c.Status(200)
-			return c.JSON(map[string]string{"status": "user created"})
+			return c.JSON(map[string]string{"status": "user validated. please close this window and log in."})
 		}
 	}
 	c.Status(403)

@@ -16,13 +16,12 @@ Cookie: password=somePassword
 
 ## INITIAL LOGIN
 # @name login
-GET {{baseUrl}}/session/ HTTP/1.1
+POST {{baseUrl}}/session/ HTTP/1.1
 content-type: application/json
 WWW-Authentication: upass
 Authorization: none
-Cookie: username=someUser2@gmail.com
-Cookie: password=somePassword
-
+x-username: verifieduser@gmail.com
+x-password: 12345678
 ###
 
 ## SUBSEQUENT Requests
